@@ -11,6 +11,8 @@ public class IsometricCharacterController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float _rotationSpeed = 0.1f;
     [SerializeField] private float _moveSpeed = 5.0f;
+    [SerializeField] private float _dashDistance = 4f;
+    [SerializeField] private float _dashSpeed = 3f;
     
     [Header("Animation")]
     [Range(0,1f)]
@@ -20,12 +22,20 @@ public class IsometricCharacterController : MonoBehaviour
     [SerializeField]
     private float _stopAnimTime = 0.15f;
     
+    // Components
     private Animator _anim;
     private CharacterController _controller;
     private Camera _camera;
     
-    [NonSerialized] private Vector2 _moveInput;
-    [NonSerialized] private bool _attackInput = false;
+    // Inputs
+    private Vector2 _moveInput;
+    private bool _attackInput = false;
+    private bool _dashInput = false;
+
+    // 
+    private bool _isDashing = false;
+    private Vector3 _dashGoal = Vector3.zero;
+    private Vector3 _dashDir = Vector3.zero;
 
     void Awake()
     {
@@ -42,12 +52,18 @@ public class IsometricCharacterController : MonoBehaviour
     {
         _input.MoveEvent += OnMove;
         _input.AttackEvent += OnAttackStarted;
+        _input.AttackCancelledEvent += OnAttackCancelled;
+        _input.DashEvent += OnDashStarted;
+        _input.DashCancelledEvent += OnDashCancelled;
     }
 
     void OnDisable()
     {
         _input.MoveEvent -= OnMove;
         _input.AttackEvent -= OnAttackStarted;
+        _input.AttackCancelledEvent -= OnAttackCancelled;
+        _input.DashEvent -= OnDashStarted;
+        _input.DashCancelledEvent -= OnDashCancelled;
     }
 
     void Update()
@@ -60,21 +76,49 @@ public class IsometricCharacterController : MonoBehaviour
         camRight.y = 0f;
 
         var adjustedMovement = camRight.normalized * _moveInput.x + camForward.normalized * _moveInput.y;
-
+        
         // Fix to avoid getting a Vector3.zero vector, which would result in the player turning to x:0, z:0
         var inputMagnitude = _moveInput.sqrMagnitude;
         if (inputMagnitude == 0f)
+            {
+                adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
+                _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);
+            }
+            else
+            {
+                _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
+            }
+
+        if (_isDashing == false && _dashInput)
         {
-            adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
-            _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);
+            // Start dashing
+            _isDashing = true;
+            _dashInput = false; // consume the input
+            _dashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
+            _dashGoal = transform.position + _dashDir * _dashDistance;
+
+            transform.rotation = Quaternion.LookRotation (_dashDir);
         }
-        else
+        else if (_isDashing)
         {
-            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
+            // Dash move
+            
+            if (Vector3.Distance(transform.position, _dashGoal) < 0.5f)
+                _isDashing = false;
+
+            _controller.Move(_dashDir * Time.deltaTime * _dashSpeed);
+        }
+        else 
+        {                        
+            if (inputMagnitude == 0f)            
+                _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
+            else           
+                _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);           
+
+            transform.rotation = Quaternion.Slerp (transform.rotation, Quaternion.LookRotation (adjustedMovement), _rotationSpeed);
+            _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);
         }
 
-        transform.rotation = Quaternion.Slerp (transform.rotation, Quaternion.LookRotation (adjustedMovement), _rotationSpeed);
-        _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);
     }
 
     #region Input Handling
@@ -82,6 +126,10 @@ public class IsometricCharacterController : MonoBehaviour
     private void OnMove(Vector2 move) => _moveInput = move;
 
     private void OnAttackStarted() => _attackInput = true;
+    private void OnAttackCancelled() => _attackInput = false;
+
+    private void OnDashStarted() => _dashInput = true;
+    private void OnDashCancelled() => _dashInput = false;
 
     #endregion
 

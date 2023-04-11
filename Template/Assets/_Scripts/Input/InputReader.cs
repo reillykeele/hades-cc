@@ -13,7 +13,11 @@ namespace Input
 		
         public event UnityAction<Vector2> MoveEvent = delegate { };
         public event UnityAction AttackEvent = delegate { };
-        public event UnityAction AttackCanceledEvent = delegate { };
+        public event UnityAction AttackCancelledEvent = delegate { };
+		public event UnityAction SpecialEvent = delegate { };
+		public event UnityAction SpecialCancelledEvent = delegate { };
+		public event UnityAction DashEvent = delegate { };
+		public event UnityAction DashCancelledEvent = delegate { };
 
 		#endregion
 
@@ -67,10 +71,36 @@ namespace Input
 				    AttackEvent.Invoke();
 				    break;
 			    case InputActionPhase.Canceled:
-				    AttackCanceledEvent.Invoke();
+				    AttackCancelledEvent.Invoke();
 				    break;
 		    }
         }
+
+		public void OnSpecial(InputAction.CallbackContext context)
+        {
+			switch (context.phase)
+		    {
+			    case InputActionPhase.Performed:
+				    SpecialEvent.Invoke();
+				    break;
+			    case InputActionPhase.Canceled:
+				    SpecialCancelledEvent.Invoke();
+				    break;
+		    }
+		}
+
+        public void OnDash(InputAction.CallbackContext context)
+        {
+			switch (context.phase)
+		    {
+			    case InputActionPhase.Performed:
+				    DashEvent.Invoke();
+				    break;	
+				case InputActionPhase.Canceled:
+				    DashCancelledEvent.Invoke();
+				    break;
+		    }
+		}
 
 		#endregion
 
@@ -85,7 +115,7 @@ namespace Input
         public void OnNewaction(InputAction.CallbackContext context)
         {
             throw new System.NotImplementedException();
-        }
+        }        
 
         #endregion
 
