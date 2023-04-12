@@ -1,6 +1,5 @@
 using Input;
 using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -23,14 +22,14 @@ public class IsometricCharacterController : MonoBehaviour
     private float _stopAnimTime = 0.15f;
     
     // Components
-    private Animator _anim;
+    public Animator _anim;
     private CharacterController _controller;
     private Camera _camera;
     
     // Inputs
-    private Vector2 _moveInput;
-    private bool _attackInput = false;
-    private bool _dashInput = false;
+    public Vector2 MoveInput;
+    public bool AttackInput = false;
+    public bool DashInput = false;
 
     // 
     private bool _isDashing = false;
@@ -75,10 +74,10 @@ public class IsometricCharacterController : MonoBehaviour
         camForward.y = 0f;
         camRight.y = 0f;
 
-        var adjustedMovement = camRight.normalized * _moveInput.x + camForward.normalized * _moveInput.y;
+        var adjustedMovement = camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
         
         // Fix to avoid getting a Vector3.zero vector, which would result in the player turning to x:0, z:0
-        var inputMagnitude = _moveInput.sqrMagnitude;
+        var inputMagnitude = MoveInput.sqrMagnitude;
         if (inputMagnitude == 0f)
             {
                 adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
@@ -89,11 +88,11 @@ public class IsometricCharacterController : MonoBehaviour
                 _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
             }
 
-        if (_isDashing == false && _dashInput)
+        if (_isDashing == false && DashInput)
         {
             // Start dashing
             _isDashing = true;
-            _dashInput = false; // consume the input
+            DashInput = false; // consume the input
             _dashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
             _dashGoal = transform.position + _dashDir * _dashDistance;
 
@@ -123,13 +122,13 @@ public class IsometricCharacterController : MonoBehaviour
 
     #region Input Handling
 
-    private void OnMove(Vector2 move) => _moveInput = move;
+    private void OnMove(Vector2 move) => MoveInput = move;
 
-    private void OnAttackStarted() => _attackInput = true;
-    private void OnAttackCancelled() => _attackInput = false;
+    private void OnAttackStarted() => AttackInput = true;
+    private void OnAttackCancelled() => AttackInput = false;
 
-    private void OnDashStarted() => _dashInput = true;
-    private void OnDashCancelled() => _dashInput = false;
+    private void OnDashStarted() => DashInput = true;
+    private void OnDashCancelled() => DashInput = false;
 
     #endregion
 
