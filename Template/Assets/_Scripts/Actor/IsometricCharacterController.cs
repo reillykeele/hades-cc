@@ -29,9 +29,11 @@ public class IsometricCharacterController : MonoBehaviour
     // Inputs
     public Vector2 MoveInput;
     public bool AttackInput = false;
+    public bool SpecialInput = false;
     public bool DashInput = false;
 
     // 
+    public bool AllowMovement = true;
     private bool _isDashing = false;
     private Vector3 _dashGoal = Vector3.zero;
     private Vector3 _dashDir = Vector3.zero;
@@ -52,6 +54,8 @@ public class IsometricCharacterController : MonoBehaviour
         _input.MoveEvent += OnMove;
         _input.AttackEvent += OnAttackStarted;
         _input.AttackCancelledEvent += OnAttackCancelled;
+        _input.SpecialEvent += OnSpecialStarted;
+        _input.SpecialCancelledEvent += OnSpecialCancelled;
         _input.DashEvent += OnDashStarted;
         _input.DashCancelledEvent += OnDashCancelled;
     }
@@ -61,12 +65,16 @@ public class IsometricCharacterController : MonoBehaviour
         _input.MoveEvent -= OnMove;
         _input.AttackEvent -= OnAttackStarted;
         _input.AttackCancelledEvent -= OnAttackCancelled;
+        _input.SpecialEvent -= OnSpecialStarted;
+        _input.SpecialCancelledEvent -= OnSpecialCancelled;
         _input.DashEvent -= OnDashStarted;
         _input.DashCancelledEvent -= OnDashCancelled;
     }
 
     void Update()
     {
+        if (AllowMovement == false) return;
+
         // Project movement onto the XZ plane
         var camForward = _camera.transform.forward;
 		var camRight = _camera.transform.right;
@@ -126,6 +134,9 @@ public class IsometricCharacterController : MonoBehaviour
 
     private void OnAttackStarted() => AttackInput = true;
     private void OnAttackCancelled() => AttackInput = false;
+
+    private void OnSpecialStarted() => SpecialInput = true;
+    private void OnSpecialCancelled() => SpecialInput = false;
 
     private void OnDashStarted() => DashInput = true;
     private void OnDashCancelled() => DashInput = false;

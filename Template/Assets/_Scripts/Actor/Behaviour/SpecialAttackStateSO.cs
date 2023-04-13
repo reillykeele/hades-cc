@@ -3,42 +3,44 @@ using Util.FSM;
 
 namespace Actor.Behaviour
 {
-    [CreateAssetMenu(fileName = "Melee2State", menuName = "State Machine/States/Melee 2 State")]
-    public class Melee2StateSO : StateSO
+    [CreateAssetMenu(fileName = "SpecialAttackState", menuName = "State Machine/States/Special Attack State")]
+    public class SpecialAttackStateSO : StateSO
     {
         public override State Initialize(StateMachine stateMachine)
         {
-            return new Melee2State(stateMachine);
+            return new SpecialAttackState(stateMachine);
         }
     }
 
-    public class Melee2State : State
+    public class SpecialAttackState : State
     {
         private IsometricCharacterController _playerController;
 
-        private const float _duration = 0.75f;
+        private const float _minDuration = 1.0f;
+
         private float _timeSinceEntering = 0.0f;
 
-        public Melee2State(StateMachine stateMachine) : base(stateMachine) 
+        public SpecialAttackState(StateMachine stateMachine) : base(stateMachine) 
         {
             _playerController = stateMachine.GetComponent<IsometricCharacterController>();
 
-            Debug.Log("Melee2State Awake");
+            Debug.Log("SpecialAttackState Awake");
         }
 
         public override void Enter()
         {
             _timeSinceEntering = 0.0f;
 
-            _playerController._anim.SetTrigger("melee2");
-            Debug.Log("Melee2State Enter");
+            _playerController.AllowMovement = false;
+            _playerController._anim.SetTrigger("melee1");
+            Debug.Log("SpecialAttackState Enter");
         }
 
         public override void Update()
         {           
             _timeSinceEntering += Time.deltaTime;
 
-            if (_timeSinceEntering >= _duration ) 
+            if (_timeSinceEntering >= _minDuration) 
             {                
                 _stateMachine.TransitionState<IdleState>();                
             }

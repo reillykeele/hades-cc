@@ -2901,6 +2901,37 @@ SkinnedMeshRenderer:
     m_Center: {x: 4.656613e-10, y: 0.027823603, z: 0.0071387496}
     m_Extent: {x: 0.0071336757, y: 0.004655117, z: 0.0010707472}
   m_DirtyAABB: 0
+--- !u!1 &4471653848112346283
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7188408338687492376}
+  m_Layer: 0
+  m_Name: Sword
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7188408338687492376
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4471653848112346283}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3423169738814815015}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4485112151065264380
 GameObject:
   m_ObjectHideFlags: 0
@@ -3353,9 +3384,11 @@ MonoBehaviour:
   _dashSpeed: 30
   _startAnimTime: 0.3
   _stopAnimTime: 0.15
-  _moveInput: {x: 0, y: 0}
-  _attackInput: 0
-  _dashInput: 0
+  _anim: {fileID: 0}
+  MoveInput: {x: 0, y: 0}
+  AttackInput: 0
+  DashInput: 0
+  AllowMovement: 1
 --- !u!114 &6142802863766321093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4727,6 +4760,7 @@ Transform:
   - {fileID: 3588438333212692430}
   - {fileID: 623075080409252023}
   - {fileID: 9186776254237562492}
+  - {fileID: 7188408338687492376}
   m_Father: {fileID: 3586679047031167329}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

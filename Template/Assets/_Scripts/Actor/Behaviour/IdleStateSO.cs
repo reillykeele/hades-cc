@@ -22,13 +22,25 @@ namespace Actor.Behaviour
 
             Debug.Log("IdleState Awake");
         }
+        
+        public override void Enter()
+        {
+            _playerController.AllowMovement = true;
+        }
 
         public override void Update()
         {
             if (_playerController.AttackInput)
             {
                 _playerController.AttackInput = false;
-                _stateMachine.TransitionState<MeleeState>();
+                _stateMachine.TransitionState<Melee1AttackState>();
+                return;
+            }
+
+            if (_playerController.SpecialInput)
+            {
+                _playerController.AttackInput = false;
+                _stateMachine.TransitionState<SpecialAttackState>();
                 return;
             }
         }
