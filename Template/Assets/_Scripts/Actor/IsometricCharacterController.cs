@@ -1,6 +1,7 @@
 using Input;
 using System;
 using UnityEngine;
+using Util.Helpers;
 
 [RequireComponent(typeof(CharacterController))]
 public class IsometricCharacterController : MonoBehaviour
@@ -20,6 +21,8 @@ public class IsometricCharacterController : MonoBehaviour
     [Range(0, 1f)]
     [SerializeField]
     private float _stopAnimTime = 0.15f;
+
+    [SerializeField] private Transform _swordTransform;
     
     // Components
     public Animator _anim;
@@ -34,7 +37,7 @@ public class IsometricCharacterController : MonoBehaviour
 
     // 
     public bool AllowMovement = true;
-    private bool _isDashing = false;
+    public bool IsDashing = false;
     private Vector3 _dashGoal = Vector3.zero;
     private Vector3 _dashDir = Vector3.zero;
 
@@ -73,8 +76,15 @@ public class IsometricCharacterController : MonoBehaviour
 
     void Update()
     {
-        if (AllowMovement == false) return;
+        
+    }
 
+    /// <summary>
+    /// Projects the input movement onto the XZ plane. 
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 CalculateAdjustedMovement()
+    {
         // Project movement onto the XZ plane
         var camForward = _camera.transform.forward;
 		var camRight = _camera.transform.right;
@@ -82,51 +92,62 @@ public class IsometricCharacterController : MonoBehaviour
         camForward.y = 0f;
         camRight.y = 0f;
 
-        var adjustedMovement = camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
-        
+        return camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
+    }
+
+    public void PlayerMovement()
+    {   
+        var adjustedMovement = CalculateAdjustedMovement();
+
         // Fix to avoid getting a Vector3.zero vector, which would result in the player turning to x:0, z:0
         var inputMagnitude = MoveInput.sqrMagnitude;
         if (inputMagnitude == 0f)
-            {
-                adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
-                _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);
-            }
-            else
-            {
-                _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
-            }
-
-        if (_isDashing == false && DashInput)
         {
-            // Start dashing
-            _isDashing = true;
-            DashInput = false; // consume the input
-            _dashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
-            _dashGoal = transform.position + _dashDir * _dashDistance;
-
-            transform.rotation = Quaternion.LookRotation (_dashDir);
+            adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
+            _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);
         }
-        else if (_isDashing)
+        else
         {
-            // Dash move
-            
-            if (Vector3.Distance(transform.position, _dashGoal) < 0.5f)
-                _isDashing = false;
-
-            _controller.Move(_dashDir * Time.deltaTime * _dashSpeed);
+            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
         }
-        else 
-        {                        
-            if (inputMagnitude == 0f)            
-                _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
-            else           
-                _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);           
+        
 
-            transform.rotation = Quaternion.Slerp (transform.rotation, Quaternion.LookRotation (adjustedMovement), _rotationSpeed);
-            _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);
-        }
+        if (inputMagnitude == 0f)            
+            _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
+        else           
+            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);           
 
+        transform.rotation = Quaternion.Slerp (transform.rotation, Quaternion.LookRotation (adjustedMovement), _rotationSpeed);
+        _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);        
     }
+
+    public bool ShouldDash => IsDashing == false && DashInput;
+
+    public void StartDash()
+    {
+        var inputMagnitude = MoveInput.sqrMagnitude;
+        var adjustedMovement = CalculateAdjustedMovement();
+
+        IsDashing = true;
+        _dashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
+        _dashGoal = transform.position + _dashDir * _dashDistance;
+
+        transform.rotation = Quaternion.LookRotation (_dashDir);
+    }
+
+    public void DashMovement()
+    {
+        if (Vector3.Distance(transform.position, _dashGoal) < 0.5f)
+        { 
+            IsDashing = false;
+            return;
+        }
+
+        _controller.Move(_dashDir * Time.deltaTime * _dashSpeed);
+    }    
+
+    public void ShowSword() => _swordTransform.Enable();
+    public void HideSword() => _swordTransform.Disable();
 
     #region Input Handling
 

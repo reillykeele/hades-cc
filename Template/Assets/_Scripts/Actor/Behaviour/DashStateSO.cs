@@ -25,12 +25,18 @@ namespace Actor.Behaviour
         
         public override void Enter()
         {
-            _playerController.AllowMovement = true;
+            _playerController.StartDash();
         }
 
         public override void Update()
-        {
-            
+        {           
+            _playerController.DashMovement();
+
+            if (_playerController.IsDashing == false)
+            {
+                _stateMachine.TransitionState<IdleState>();
+                return;
+            }
         }
     }
 }

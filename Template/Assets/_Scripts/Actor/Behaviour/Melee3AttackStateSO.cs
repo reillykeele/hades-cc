@@ -3,28 +3,28 @@ using Util.FSM;
 
 namespace Actor.Behaviour
 {
-    [CreateAssetMenu(fileName = "SpecialAttackState", menuName = "State Machine/States/Special Attack State")]
-    public class SpecialAttackStateSO : StateSO
+    [CreateAssetMenu(fileName = "Melee3AttackState", menuName = "State Machine/States/Melee 3 Attack State")]
+    public class Melee3AttackStateSO : StateSO
     {
         public override State Initialize(StateMachine stateMachine)
         {
-            return new SpecialAttackState(stateMachine);
+            return new Melee3AttackState(stateMachine);
         }
     }
 
-    public class SpecialAttackState : State
+    public class Melee3AttackState : State
     {
         private IsometricCharacterController _playerController;
 
-        private const float _minDuration = 1.0f;
+        private const float _minDuration = 1.25f;
 
         private float _timeSinceEntering = 0.0f;
 
-        public SpecialAttackState(StateMachine stateMachine) : base(stateMachine) 
+        public Melee3AttackState(StateMachine stateMachine) : base(stateMachine) 
         {
             _playerController = stateMachine.GetComponent<IsometricCharacterController>();
 
-            Debug.Log("SpecialAttackState Awake");
+            Debug.Log("Melee3AttackState Awake");
         }
 
         public override void Enter()
@@ -32,8 +32,9 @@ namespace Actor.Behaviour
             _timeSinceEntering = 0.0f;
 
             _playerController.AllowMovement = false;
-            _playerController._anim.SetTrigger("special");
-            Debug.Log("SpecialAttackState Enter");
+            _playerController.ShowSword();
+            _playerController._anim.SetTrigger("melee3");
+            Debug.Log("Melee3AttackState Enter");
         }
 
         public override void Update()
@@ -41,14 +42,15 @@ namespace Actor.Behaviour
             _timeSinceEntering += Time.deltaTime;
 
             if (_timeSinceEntering >= _minDuration) 
-            {                
-                _stateMachine.TransitionState<IdleState>();                
+            {               
+                _stateMachine.TransitionState<IdleState>();         
+                return;
             }
         }
 
         public override void Exit()
         {
-
+            _playerController.HideSword();
         }
 
     }

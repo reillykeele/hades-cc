@@ -26,6 +26,7 @@ namespace Actor.Behaviour
         public override void Enter()
         {
             _playerController.AllowMovement = true;
+            _playerController.HideSword();
         }
 
         public override void Update()
@@ -39,10 +40,19 @@ namespace Actor.Behaviour
 
             if (_playerController.SpecialInput)
             {
-                _playerController.AttackInput = false;
+                _playerController.SpecialInput = false;
                 _stateMachine.TransitionState<SpecialAttackState>();
                 return;
             }
+
+            if (_playerController.ShouldDash)
+            {
+                _playerController.DashInput = false;
+                _stateMachine.TransitionState<DashState>();
+                return;
+            }
+
+            _playerController.PlayerMovement();
         }
     }
 }
