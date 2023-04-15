@@ -92,26 +92,20 @@ public class IsometricCharacterController : MonoBehaviour
         camForward.y = 0f;
         camRight.y = 0f;
 
-        return camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
+        var adjustedMovement = camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
+
+        adjustedMovement = MoveInput.sqrMagnitude == 0f ? 
+            transform.forward * (adjustedMovement.magnitude + .01f) : 
+            adjustedMovement;
+
+        return adjustedMovement;
     }
 
     public void PlayerMovement()
     {   
         var adjustedMovement = CalculateAdjustedMovement();
 
-        // Fix to avoid getting a Vector3.zero vector, which would result in the player turning to x:0, z:0
-        var inputMagnitude = MoveInput.sqrMagnitude;
-        if (inputMagnitude == 0f)
-        {
-            adjustedMovement = transform.forward * (adjustedMovement.magnitude + .01f);
-            _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);
-        }
-        else
-        {
-            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
-        }
-        
-
+        var inputMagnitude = MoveInput.sqrMagnitude;       
         if (inputMagnitude == 0f)            
             _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
         else           

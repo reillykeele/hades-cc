@@ -43,7 +43,7 @@ namespace Actor.Behaviour
 
         public override void Update()
         {
-            // if we attack during 
+            // if we attack during, we want to combo after 
             if (_playerController.AttackInput)
             {
                 _playerController.AttackInput = false;

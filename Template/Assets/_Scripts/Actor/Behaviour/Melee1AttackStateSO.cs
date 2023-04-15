@@ -19,9 +19,11 @@ namespace Actor.Behaviour
         // 
         private const float _minDuration = 0.5f;
         private const float _comboDuration = 0.75f;
+        private const float _movementMagnitude = 1f;
         
         private float _timeSinceEntering = 0.0f;
         private bool _shouldCombo = false;
+        private Vector3 _movementDirection;
 
         public Melee1AttackState(StateMachine stateMachine) : base(stateMachine) 
         {
@@ -34,6 +36,7 @@ namespace Actor.Behaviour
         {
             _timeSinceEntering = 0.0f;
             _shouldCombo = false;
+            _movementDirection = _playerController.CalculateAdjustedMovement().normalized;
 
             _playerController.AllowMovement = false;
             _playerController.ShowSword();
@@ -43,7 +46,7 @@ namespace Actor.Behaviour
 
         public override void Update()
         {
-            // if we attack during 
+            // if we attack during, we want to combo after 
             if (_playerController.AttackInput)
             {
                 _playerController.AttackInput = false;
