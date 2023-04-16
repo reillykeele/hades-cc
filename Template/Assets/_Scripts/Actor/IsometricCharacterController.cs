@@ -1,6 +1,8 @@
 using Input;
-using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using Util.Attributes;
 using Util.Helpers;
 
 [RequireComponent(typeof(CharacterController))]
@@ -11,6 +13,8 @@ public class IsometricCharacterController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float _rotationSpeed = 0.1f;
     [SerializeField] private float _moveSpeed = 5.0f;
+    [SerializeField] private float _coyoteTime = 0.1f;
+    [SerializeField] private float _constGravity = -0.1f;
     [SerializeField] private int _numDashes = 1;
     [SerializeField] private float _dashDistance = 4f;
     [SerializeField] private float _dashSpeed = 3f;
@@ -23,30 +27,47 @@ public class IsometricCharacterController : MonoBehaviour
     private float _stopAnimTime = 0.15f;
 
     [SerializeField] private Transform _swordTransform;
-    
+
     // Components
-    public Animator _anim;
+    [HideInInspector] public Animator _anim;
     private CharacterController _controller;
     private Camera _camera;
-    
+
     // Inputs
-    public Vector2 MoveInput;
-    public bool AttackInput = false;
-    public bool SpecialInput = false;
-    public bool DashInput = false;
+    [Header("Inputs")]
+    [ReadOnly] public Vector2 MoveInput;
+    [ReadOnly] public bool AttackInput = false;
+    [ReadOnly] public bool SpecialInput = false;
+    [ReadOnly] public bool DashInput = false;
 
     // 
-    public bool AllowMovement = true;
-    public int Dashes;
-    public bool IsDashing = false;
-    public float TimeSinceDash = 0f;
-    public float CurrDashDistance = 0f;
-    public Vector3 CurrDashDir = Vector3.zero;
+    [ReadOnly] public bool AllowMovement = true;
+    [ReadOnly] [SerializeField] private float _timeSinceGrounded;
+    [ReadOnly] public int Dashes;
+    private bool _isDashing = false;
+    public bool IsDashing
+    {
+        get => _isDashing;
+        set
+        {
+            _isDashing = value;
+            _anim.SetBool("isDashing", value);
+        }
+    }
+    // [ReadOnly] public float TimeSinceDash = 0f;
+    private LinkedList<float> _timesSinceDashes;
+    [ReadOnly] public float CurrDashDistance = 0f;
+    [ReadOnly] public Vector3 CurrDashDir = Vector3.zero;
+
+    private bool _dead = false;
 
     void Awake()
     {
         _anim = GetComponent<Animator>();
-        _controller = GetComponent<CharacterController>();    
+        _controller = GetComponent<CharacterController>();
+
+        Dashes = _numDashes;
+        _timesSinceDashes = new LinkedList<float>();
     }
 
     void Start()
@@ -80,12 +101,26 @@ public class IsometricCharacterController : MonoBehaviour
     {
         if (Dashes < _numDashes)
         {
-            TimeSinceDash += Time.deltaTime;
-            if (TimeSinceDash >= _dashRechargeTime)
+            for (var dashTimerNode = _timesSinceDashes.First; dashTimerNode != null; dashTimerNode = dashTimerNode.Next)
             {
-                Dashes++;
+                dashTimerNode.Value += Time.deltaTime;
+                if (dashTimerNode.Value >= _dashRechargeTime)
+                {
+                    Dashes++;
+                    _timesSinceDashes.Remove(dashTimerNode);
+                }
             }
         }
+    }
+
+    public void Respawn()
+    {
+        _controller.enabled = false;
+        transform.position = Vector3.zero;
+        _controller.enabled = true;
+
+        _dead = false;
+        _timeSinceGrounded = 0f;
     }
 
     /// <summary>
@@ -114,7 +149,7 @@ public class IsometricCharacterController : MonoBehaviour
     {
         var inputDirection = CalculateInputDirection();
 
-        var adjustedMovement = inputDirection = MoveInput.sqrMagnitude == 0f ? 
+        var adjustedMovement = MoveInput.sqrMagnitude == 0f ? 
             transform.forward * (inputDirection.magnitude + .01f) :
             inputDirection;
 
@@ -127,11 +162,33 @@ public class IsometricCharacterController : MonoBehaviour
 
         var inputMagnitude = MoveInput.sqrMagnitude;       
         if (inputMagnitude == 0f)            
-            _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
+            _anim.SetFloat ("Blend", 0f, _stopAnimTime, Time.deltaTime);           
         else           
-            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
+            _anim.SetFloat ("Blend", _controller.velocity.magnitude, _startAnimTime, Time.deltaTime);
 
         transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(adjustedMovement), _rotationSpeed);
+
+        // apply gravity
+        adjustedMovement.y = _constGravity;
+        if (_controller.isGrounded == false)
+        {
+            // TODO: add coyote time
+            Debug.Log("not grounded");
+            _timeSinceGrounded += Time.deltaTime;
+            if (_timeSinceGrounded >= _coyoteTime)
+            {
+                // die
+                Debug.Log("FELL OFF");
+                // adjustedMovement.y = -10f;
+
+                Respawn();
+            }
+        }
+        else
+        {
+            _timeSinceGrounded = 0f;
+        }
+
         _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);
     }
 
@@ -155,7 +212,7 @@ public class IsometricCharacterController : MonoBehaviour
 
         IsDashing = true;
         Dashes--;
-        TimeSinceDash = 0.0f;
+        _timesSinceDashes.AddLast(0.0f);
         CurrDashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
         CurrDashDistance= 0.0f;
 
