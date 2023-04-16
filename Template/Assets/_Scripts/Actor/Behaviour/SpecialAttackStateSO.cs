@@ -16,7 +16,7 @@ namespace Actor.Behaviour
     {
         private IsometricCharacterController _playerController;
 
-        private const float _minDuration = 1.0f;
+        private const float _minDuration = 0.75f;
 
         private float _timeSinceEntering = 0.0f;
 

@@ -16,9 +16,12 @@ namespace Actor.Behaviour
     {
         private IsometricCharacterController _playerController;
 
-        private const float _minDuration = 1.25f;
+        private const float _minDuration = 0.65f;
+        private const float _movementDuration = 0.5f;
+        private const float _movementMagnitude = 6f;
 
         private float _timeSinceEntering = 0.0f;
+        private Vector3 _movementDirection;
 
         public Melee3AttackState(StateMachine stateMachine) : base(stateMachine) 
         {
@@ -30,8 +33,10 @@ namespace Actor.Behaviour
         public override void Enter()
         {
             _timeSinceEntering = 0.0f;
+            _movementDirection = _playerController.CalculateAdjustedMovement().normalized; // always lunge
 
             _playerController.AllowMovement = false;
+            _playerController.SetLookRotation(_movementDirection);
             _playerController.ShowSword();
             _playerController._anim.SetTrigger("melee3");
             Debug.Log("Melee3AttackState Enter");
@@ -41,7 +46,13 @@ namespace Actor.Behaviour
         {           
             _timeSinceEntering += Time.deltaTime;
 
-            if (_timeSinceEntering >= _minDuration) 
+            if (_timeSinceEntering < _movementDuration)
+            {
+                var force = Vector3.Lerp(_movementDirection, Vector3.zero, _timeSinceEntering / _minDuration);
+                _playerController.AddForce(force * _movementMagnitude);
+            }
+            
+            if (_timeSinceEntering >= _minDuration)
             {               
                 _stateMachine.TransitionState<IdleState>();         
                 return;

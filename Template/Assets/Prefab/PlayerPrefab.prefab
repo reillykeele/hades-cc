@@ -3381,8 +3381,10 @@ MonoBehaviour:
   _input: {fileID: 11400000, guid: 40bae8348540b6349826fbaf783a0bb1, type: 2}
   _rotationSpeed: 0.1
   _moveSpeed: 5
-  _dashDistance: 5
+  _numDashes: 2
+  _dashDistance: 3
   _dashSpeed: 30
+  _dashRechargeTime: 1
   _startAnimTime: 0.3
   _stopAnimTime: 0.15
   _swordTransform: {fileID: 7188408338687492376}
@@ -3392,7 +3394,11 @@ MonoBehaviour:
   SpecialInput: 0
   DashInput: 0
   AllowMovement: 1
+  Dashes: 0
   IsDashing: 0
+  TimeSinceDash: 0
+  CurrDashDistance: 0
+  CurrDashDir: {x: 0, y: 0, z: 0}
 --- !u!114 &6142802863766321093
 MonoBehaviour:
   m_ObjectHideFlags: 0

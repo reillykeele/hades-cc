@@ -11,15 +11,15 @@ public class IsometricCharacterController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float _rotationSpeed = 0.1f;
     [SerializeField] private float _moveSpeed = 5.0f;
+    [SerializeField] private int _numDashes = 1;
     [SerializeField] private float _dashDistance = 4f;
     [SerializeField] private float _dashSpeed = 3f;
-    
+    [SerializeField] private float _dashRechargeTime = 1.0f;
+
     [Header("Animation")]
-    [Range(0,1f)]
-    [SerializeField]
+    [Range(0,1f)] [SerializeField]
     private float _startAnimTime = 0.3f;
-    [Range(0, 1f)]
-    [SerializeField]
+    [Range(0, 1f)] [SerializeField]
     private float _stopAnimTime = 0.15f;
 
     [SerializeField] private Transform _swordTransform;
@@ -37,9 +37,11 @@ public class IsometricCharacterController : MonoBehaviour
 
     // 
     public bool AllowMovement = true;
+    public int Dashes;
     public bool IsDashing = false;
-    private Vector3 _dashGoal = Vector3.zero;
-    private Vector3 _dashDir = Vector3.zero;
+    public float TimeSinceDash = 0f;
+    public float CurrDashDistance = 0f;
+    public Vector3 CurrDashDir = Vector3.zero;
 
     void Awake()
     {
@@ -76,27 +78,45 @@ public class IsometricCharacterController : MonoBehaviour
 
     void Update()
     {
-        
+        if (Dashes < _numDashes)
+        {
+            TimeSinceDash += Time.deltaTime;
+            if (TimeSinceDash >= _dashRechargeTime)
+            {
+                Dashes++;
+            }
+        }
     }
 
     /// <summary>
-    /// Projects the input movement onto the XZ plane. 
+    /// Projects the input movement direction onto the XZ plane. 
     /// </summary>
     /// <returns></returns>
-    public Vector3 CalculateAdjustedMovement()
+    public Vector3 CalculateInputDirection()
     {
         // Project movement onto the XZ plane
         var camForward = _camera.transform.forward;
-		var camRight = _camera.transform.right;
+        var camRight = _camera.transform.right;
 
         camForward.y = 0f;
         camRight.y = 0f;
 
-        var adjustedMovement = camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
+        var inputDirection = camRight.normalized * MoveInput.x + camForward.normalized * MoveInput.y;
 
-        adjustedMovement = MoveInput.sqrMagnitude == 0f ? 
-            transform.forward * (adjustedMovement.magnitude + .01f) : 
-            adjustedMovement;
+        return inputDirection.normalized;
+    }
+
+    /// <summary>
+    /// Projects the adjusted input movement onto the XZ plane. 
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 CalculateAdjustedMovement()
+    {
+        var inputDirection = CalculateInputDirection();
+
+        var adjustedMovement = inputDirection = MoveInput.sqrMagnitude == 0f ? 
+            transform.forward * (inputDirection.magnitude + .01f) :
+            inputDirection;
 
         return adjustedMovement;
     }
@@ -109,13 +129,24 @@ public class IsometricCharacterController : MonoBehaviour
         if (inputMagnitude == 0f)            
             _anim.SetFloat ("Blend", inputMagnitude, _stopAnimTime, Time.deltaTime);           
         else           
-            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);           
+            _anim.SetFloat ("Blend", inputMagnitude, _startAnimTime, Time.deltaTime);
 
-        transform.rotation = Quaternion.Slerp (transform.rotation, Quaternion.LookRotation (adjustedMovement), _rotationSpeed);
-        _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);        
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(adjustedMovement), _rotationSpeed);
+        _controller.Move(adjustedMovement * Time.deltaTime * _moveSpeed);
     }
 
-    public bool ShouldDash => IsDashing == false && DashInput;
+    /// <summary>
+    /// Sets the player's rotation to the <c>lookDirection</c>. Will not rotate the player if
+    /// <c>lookRotation</c> is <c>Vector3.Zero</c>.
+    /// </summary>
+    /// <param name="lookDirection"></param>
+    public void SetLookRotation(Vector3 lookDirection)
+    {
+        if (lookDirection.sqrMagnitude != 0)
+            transform.rotation = Quaternion.LookRotation(lookDirection);
+    }
+
+    public bool ShouldDash => Dashes > 0 && IsDashing == false && DashInput;
 
     public void StartDash()
     {
@@ -123,25 +154,35 @@ public class IsometricCharacterController : MonoBehaviour
         var adjustedMovement = CalculateAdjustedMovement();
 
         IsDashing = true;
-        _dashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
-        _dashGoal = transform.position + _dashDir * _dashDistance;
+        Dashes--;
+        TimeSinceDash = 0.0f;
+        CurrDashDir = inputMagnitude == 0f ? transform.forward : adjustedMovement.normalized;
+        CurrDashDistance= 0.0f;
 
-        transform.rotation = Quaternion.LookRotation (_dashDir);
+        transform.rotation = Quaternion.LookRotation (CurrDashDir);
     }
 
     public void DashMovement()
     {
-        if (Vector3.Distance(transform.position, _dashGoal) < 0.5f)
+        if (CurrDashDistance >= _dashDistance)
         { 
             IsDashing = false;
             return;
         }
 
-        _controller.Move(_dashDir * Time.deltaTime * _dashSpeed);
-    }    
+        var dist = _dashSpeed * Time.deltaTime;
+        CurrDashDistance += dist;
+        
+        _controller.Move(CurrDashDir * dist);
+    }
+
+    public void AddForce(Vector3 force)
+    {
+        _controller.Move(force * Time.deltaTime);
+    }
 
     public void ShowSword() => _swordTransform.Enable();
-    public void HideSword() => _swordTransform.Disable();
+    public void HideSword() => _swordTransform.Enable();
 
     #region Input Handling
 
