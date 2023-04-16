@@ -44,7 +44,7 @@ namespace Actor.Behaviour
             _playerController.SetLookRotation(_movementDirection);
             _playerController.ShowSword();
             _playerController._anim.SetTrigger("melee1");
-            Debug.Log("Melee1AttackState Enter");
+            // Debug.Log("Melee1AttackState Enter");
         }
 
         public override void Update()
@@ -69,8 +69,12 @@ namespace Actor.Behaviour
                 _stateMachine.TransitionState<Melee2AttackState>();
                 return;
             }
-                
-            if (_timeSinceEntering >= _minDuration) 
+
+            if (_timeSinceEntering < _minDuration)
+            {
+                _playerController.CheckAttackCollision();
+            }
+            else
             {
                 // if we are no longer animation locked
                 if (_playerController.SpecialInput)

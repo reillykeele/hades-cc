@@ -26,6 +26,7 @@ namespace Actor.Behaviour
         public override void Enter()
         {
             _playerController.StartDash();
+            _playerController.StartDashParticleSystem();
         }
 
         public override void Update()
@@ -37,6 +38,11 @@ namespace Actor.Behaviour
                 _stateMachine.TransitionState<IdleState>();
                 return;
             }
+        }
+
+        public override void Exit()
+        {
+            _playerController.StopDashParticleSystem();
         }
     }
 }

@@ -1,6 +1,7 @@
 using Input;
 using System.Collections.Generic;
 using System.Linq;
+using Actor;
 using UnityEngine;
 using Util.Attributes;
 using Util.Helpers;
@@ -20,6 +21,10 @@ public class IsometricCharacterController : MonoBehaviour
     [SerializeField] private float _dashSpeed = 3f;
     [SerializeField] private float _dashRechargeTime = 1.0f;
 
+    [Header("Combat")] 
+    [SerializeField] private BoxCollider _attackCollider;
+    [SerializeField] private float _specialRadius = 4f;
+
     [Header("Animation")]
     [Range(0,1f)] [SerializeField]
     private float _startAnimTime = 0.3f;
@@ -27,6 +32,8 @@ public class IsometricCharacterController : MonoBehaviour
     private float _stopAnimTime = 0.15f;
 
     [SerializeField] private Transform _swordTransform;
+    [SerializeField] private ParticleSystem _dashParticleSystem;
+    [SerializeField] private ParticleSystem _specialParticleSystem;
 
     // Components
     [HideInInspector] public Animator _anim;
@@ -173,14 +180,10 @@ public class IsometricCharacterController : MonoBehaviour
         if (_controller.isGrounded == false)
         {
             // TODO: add coyote time
-            Debug.Log("not grounded");
             _timeSinceGrounded += Time.deltaTime;
             if (_timeSinceGrounded >= _coyoteTime)
             {
                 // die
-                Debug.Log("FELL OFF");
-                // adjustedMovement.y = -10f;
-
                 Respawn();
             }
         }
@@ -238,8 +241,35 @@ public class IsometricCharacterController : MonoBehaviour
         _controller.Move(force * Time.deltaTime);
     }
 
+    private Collider[] _colliders = new Collider[10];
+
+    public void CheckAttackCollision()
+    {
+        var hits= Physics.OverlapBoxNonAlloc(_attackCollider.transform.position, _attackCollider.GetHalfExtents(), _colliders, _attackCollider.transform.rotation, LayerMask.GetMask("Enemy"));
+
+        for (int i = 0; i < hits; i++)
+        {
+            _colliders[i].GetComponent<IDamagable>()?.Damage(1f);
+        }
+    }
+
+    public void CheckSpecialCollision()
+    { 
+        var hits = Physics.OverlapSphereNonAlloc(_attackCollider.transform.position, _specialRadius, _colliders, LayerMask.GetMask("Enemy"));
+
+        for (int i = 0; i < hits; i++)
+        {
+            _colliders[i].GetComponent<IDamagable>()?.Damage(1f);
+        }
+    }
+
     public void ShowSword() => _swordTransform.Enable();
     public void HideSword() => _swordTransform.Enable();
+
+    public void StartDashParticleSystem() => _dashParticleSystem.Play();
+    public void StopDashParticleSystem() =>_dashParticleSystem.Stop();
+
+    public void PlaySpecialParticleSystem() => _specialParticleSystem.Play();
 
     #region Input Handling
 

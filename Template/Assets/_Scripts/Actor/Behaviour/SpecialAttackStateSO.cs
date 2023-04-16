@@ -16,7 +16,7 @@ namespace Actor.Behaviour
     {
         private IsometricCharacterController _playerController;
 
-        private const float _minDuration = 0.75f;
+        private const float _minDuration = 0.4f;
 
         private float _timeSinceEntering = 0.0f;
 
@@ -33,6 +33,7 @@ namespace Actor.Behaviour
 
             _playerController.AllowMovement = false;
             _playerController._anim.SetTrigger("special");
+            _playerController.PlaySpecialParticleSystem();
             Debug.Log("SpecialAttackState Enter");
         }
 
@@ -40,7 +41,11 @@ namespace Actor.Behaviour
         {           
             _timeSinceEntering += Time.deltaTime;
 
-            if (_timeSinceEntering >= _minDuration) 
+            if (_timeSinceEntering < _minDuration)
+            {
+                _playerController.CheckSpecialCollision();
+            }
+            else
             {                
                 _stateMachine.TransitionState<IdleState>();                
             }

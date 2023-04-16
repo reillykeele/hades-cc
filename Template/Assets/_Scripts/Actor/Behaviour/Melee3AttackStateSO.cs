@@ -16,8 +16,8 @@ namespace Actor.Behaviour
     {
         private IsometricCharacterController _playerController;
 
-        private const float _minDuration = 0.65f;
-        private const float _movementDuration = 0.5f;
+        private const float _minDuration = 0.45f;
+        private const float _movementDuration = 0.45f;
         private const float _movementMagnitude = 6f;
 
         private float _timeSinceEntering = 0.0f;
@@ -39,7 +39,7 @@ namespace Actor.Behaviour
             _playerController.SetLookRotation(_movementDirection);
             _playerController.ShowSword();
             _playerController._anim.SetTrigger("melee3");
-            Debug.Log("Melee3AttackState Enter");
+            // Debug.Log("Melee3AttackState Enter");
         }
 
         public override void Update()
@@ -51,9 +51,13 @@ namespace Actor.Behaviour
                 var force = Vector3.Lerp(_movementDirection, Vector3.zero, _timeSinceEntering / _minDuration);
                 _playerController.AddForce(force * _movementMagnitude);
             }
-            
-            if (_timeSinceEntering >= _minDuration)
-            {               
+
+            if (_timeSinceEntering < _minDuration)
+            {
+                _playerController.CheckAttackCollision();
+            }
+            else
+            {
                 _stateMachine.TransitionState<IdleState>();         
                 return;
             }
